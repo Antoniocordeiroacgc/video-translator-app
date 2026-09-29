@@ -1,0 +1,54 @@
+// Schema Prisma - Video Translator MVP
+// Rode: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum VideoStatus {
+  processing
+  completed
+  failed
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  videos Video[]
+
+  @@map("users")
+}
+
+model Video {
+  id                String      @id @default(uuid())
+  userId            String?     @map("user_id")
+  originalVideoUrl  String      @map("original_video_url")
+  status            VideoStatus @default(processing)
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  translations Translation[]
+
+  @@map("videos")
+}
+
+model Translation {
+  id                  String   @id @default(uuid())
+  videoId             String   @map("video_id")
+  targetLanguage      String   @map("target_language") // en, es, de, fr, zh
+  translatedVideoUrl  String?  @map("translated_video_url")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("translations")
+}
